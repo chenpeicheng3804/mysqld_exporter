@@ -1,8 +1,41 @@
 # 基于[percona/mysqld_exporter项目](https://github.com/percona/mysqld_exporter)改造
-## 改造内容
-- 支持采集多实例
+## 1、改造内容
+### 支持采集多实例
 ip+端口/metrics?target=实例
+
 http://localhost:9104/metrics?target=localhost:3306
+### 关闭DATA_SOURCE_NAME变量功能，仅支持传入配置文件
+
+## 2、mysql权限配置
+详情查看 https://www.percona.com/software/pmm/quickstart 第四步
+### MySQL 8.0
+```
+CREATE USER 'pmm'@'localhost' IDENTIFIED BY 'pass' WITH MAX_USER_CONNECTIONS 10;
+GRANT SELECT, PROCESS, SUPER, REPLICATION CLIENT, RELOAD, BACKUP_ADMIN ON *.* TO 'pmm'@'localhost';
+```
+### MySQL 5.7
+```
+CREATE USER 'pmm'@'localhost' IDENTIFIED BY 'pass' WITH MAX_USER_CONNECTIONS 10;
+GRANT SELECT, PROCESS, SUPER, REPLICATION CLIENT, RELOAD ON *.* TO 'pmm'@'localhost';
+```
+## 3、启动指定配置示例
+### 配置文件
+cat mysql.cnf
+```
+[client]
+user=pmm
+password=pass
+```
+### 启动方式
+```
+./mysqld_exporter --config.my-cnf=mysql.cnf
+```
+
+### 其他扩展参数
+详情查看https://www.percona.com/software/pmm
+```
+--collect.binlog_size --collect.custom_query.hr --collect.custom_query.hr.directory=/usr/local/percona/pmm2/collectors/custom-queries/mysql/high-resolution --collect.custom_query.lr --collect.custom_query.lr.directory=/usr/local/percona/pmm2/collectors/custom-queries/mysql/low-resolution --collect.custom_query.mr --collect.custom_query.mr.directory=/usr/local/percona/pmm2/collectors/custom-queries/mysql/medium-resolution --collect.engine_innodb_status --collect.engine_tokudb_status --collect.global_status --collect.global_variables --collect.heartbeat --collect.info_schema.clientstats --collect.info_schema.innodb_cmp --collect.info_schema.innodb_cmpmem --collect.info_schema.innodb_metrics --collect.info_schema.processlist --collect.info_schema.query_response_time --collect.info_schema.userstats --collect.perf_schema.eventsstatements --collect.perf_schema.eventswaits --collect.perf_schema.file_events --collect.slave_status --collect.standard.go --collect.standard.process --exporter.conn-max-lifetime=55s --exporter.global-conn-pool --exporter.max-idle-conns=3 --exporter.max-open-conns=3
+```
 
 # Percona MySQL Server Exporter [![Build Status](https://travis-ci.org/percona/mysqld_exporter.svg?branch=master)](https://travis-ci.org/percona/mysqld_exporter) [![CLA assistant](https://cla-assistant.percona.com/readme/badge/percona/mysqld_exporter)](https://cla-assistant.percona.com/percona/mysqld_exporter)
 
