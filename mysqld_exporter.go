@@ -108,7 +108,9 @@ var (
 		"Skip cert verification when connection to MySQL",
 	).Bool()
 
-	dsn string
+	dsn      string
+	user     string
+	password string
 )
 
 type webAuth struct {
@@ -216,8 +218,8 @@ func parseMycnf(config interface{}) (string, error) {
 	if err != nil {
 		return dsn, fmt.Errorf("failed reading ini file: %s", err)
 	}
-	user := cfg.Section("client").Key("user").String()
-	password := cfg.Section("client").Key("password").String()
+	user = cfg.Section("client").Key("user").String()
+	password = cfg.Section("client").Key("password").String()
 	if (user == "") || (password == "") {
 		return dsn, fmt.Errorf("no user or password specified under [client] in %s", config)
 	}
@@ -266,6 +268,12 @@ func newHandler(cfg *webAuth, db *sql.DB, metrics collector.Metrics, scrapers []
 	var processing_lr, processing_mr, processing_hr uint32 = 0, 0, 0 // default value is already 0, but for extra clarity
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
+		paramst := r.URL.Query()
+		target := paramst.Get("target")
+		if target == "" {
+			http.Error(w, "Target parameter is missing", http.StatusBadRequest)
+			return
+		}
 		query_collect := r.URL.Query().Get("collect[]")
 		switch query_collect {
 		case "custom_query.hr":
@@ -337,19 +345,19 @@ func newHandler(cfg *webAuth, db *sql.DB, metrics collector.Metrics, scrapers []
 				}
 			}
 		}
-
+		dsntarget := user + ":" + password + "@tcp(" + target + ")/"
 		// Copy db as local variable, so the pointer passed to newHandler doesn't get updated.
-		db := db
+		//db := db
 		// If there is no global connection pool then create new.
 		var err error
-		if db == nil {
-			db, err = newDB(dsn)
-			if err != nil {
-				log.Fatalln("Error opening connection to database:", err)
-				return
-			}
-			defer db.Close()
+		//if db == nil {
+		db, err = newDB(dsntarget)
+		if err != nil {
+			log.Fatalln("Error opening connection to database:", err)
+			return
 		}
+		defer db.Close()
+		//}
 
 		registry := prometheus.NewRegistry()
 		registry.MustRegister(collector.New(ctx, db, metrics, filteredScrapers))
@@ -417,15 +425,15 @@ func main() {
 	log.Infoln("Build context", version.BuildContext())
 
 	// Get DSN.
-	dsn = os.Getenv("DATA_SOURCE_NAME")
-	if len(dsn) == 0 {
-		var err error
-		if dsn, err = parseMycnf(*configMycnf); err != nil {
-			log.Fatal(err)
+	//dsn = os.Getenv("DATA_SOURCE_NAME")
+	//if len(dsn) == 0 {
+	var err error
+	if dsn, err = parseMycnf(*configMycnf); err != nil {
+		log.Fatal(err)
 
-			return
-		}
+		return
 	}
+	//}
 
 	// Setup extra params for the DSN, default to having a lock timeout.
 	dsnParams := []string{fmt.Sprintf(timeoutParam, *exporterLockTimeout)}
@@ -459,16 +467,16 @@ func main() {
 	// Open global connection pool if requested.
 	var db *sql.DB
 
-	var err error
+	//var err error
 
-	if *exporterGlobalConnPool {
-		db, err = newDB(dsn)
-		if err != nil {
-			log.Fatalln("Error opening connection to database:", err)
-			return
-		}
-		defer db.Close()
-	}
+	//if *exporterGlobalConnPool {
+	//	db, err = newDB(dsn)
+	//	if err != nil {
+	//		log.Fatalln("Error opening connection to database:", err)
+	//		return
+	//	}
+	//	defer db.Close()
+	//}
 
 	cfg := &webAuth{}
 	httpAuth := os.Getenv("HTTP_AUTH")
