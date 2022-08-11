@@ -1,3 +1,9 @@
+# 基于[percona/mysqld_exporter项目](https://github.com/percona/mysqld_exporter)改造
+## 改造内容
+- 支持采集多实例
+ip+端口/metrics?target=实例
+http://localhost:9104/metrics?target=localhost:3306
+
 # Percona MySQL Server Exporter [![Build Status](https://travis-ci.org/percona/mysqld_exporter.svg?branch=master)](https://travis-ci.org/percona/mysqld_exporter) [![CLA assistant](https://cla-assistant.percona.com/readme/badge/percona/mysqld_exporter)](https://cla-assistant.percona.com/percona/mysqld_exporter)
 
 Prometheus exporter for MySQL server metrics.
@@ -32,58 +38,58 @@ Running using ~/.my.cnf:
 
 ### Collector Flags
 
-Name                                                   | MySQL Version | Description
--------------------------------------------------------|---------------|------------------------------------------------------------------------------------
-collect.auto_increment.columns                         | 5.1           | Collect auto_increment columns and max values from information_schema.
-collect.binlog_size                                    | 5.1           | Collect the current size of all registered binlog files.
-collect.engine_innodb_status                           | 5.1           | Collect from SHOW ENGINE INNODB STATUS.
-collect.engine_tokudb_status                           | 5.6           | Collect from SHOW ENGINE TOKUDB STATUS.
-collect.global_status                                  | 5.1           | Collect from SHOW GLOBAL STATUS (Enabled by default)
-collect.global_variables                               | 5.1           | Collect from SHOW GLOBAL VARIABLES (Enabled by default)
-collect.info_schema.clientstats                        | 5.5           | If running with userstat=1, set to true to collect client statistics.
-collect.info_schema.innodb_metrics                     | 5.6           | Collect metrics from information_schema.innodb_metrics.
-collect.info_schema.innodb_tablespaces                 | 5.7           | Collect metrics from information_schema.innodb_sys_tablespaces.
-collect.info_schema.processlist                        | 5.1           | Collect thread state counts from information_schema.processlist.
-collect.info_schema.processlist.min_time               | 5.1           | Minimum time a thread must be in each state to be counted. (default: 0)
-collect.info_schema.query_response_time                | 5.5           | Collect query response time distribution if query_response_time_stats is ON.
-collect.info_schema.tables                             | 5.1           | Collect metrics from information_schema.tables (Enabled by default)
-collect.info_schema.tables.databases                   | 5.1           | The list of databases to collect table stats for, or '`*`' for all.
-collect.info_schema.tablestats                         | 5.1           | If running with userstat=1, set to true to collect table statistics.
-collect.info_schema.userstats                          | 5.1           | If running with userstat=1, set to true to collect user statistics.
-collect.perf_schema.eventsstatements                   | 5.6           | Collect metrics from performance_schema.events_statements_summary_by_digest.
-collect.perf_schema.eventsstatements.digest_text_limit | 5.6           | Maximum length of the normalized statement text. (default: 120)
-collect.perf_schema.eventsstatements.limit             | 5.6           | Limit the number of events statements digests by response time. (default: 250)
-collect.perf_schema.eventsstatements.timelimit         | 5.6           | Limit how old the 'last_seen' events statements can be, in seconds. (default: 86400)
-collect.perf_schema.eventswaits                        | 5.5           | Collect metrics from performance_schema.events_waits_summary_global_by_event_name.
-collect.perf_schema.file_events                        | 5.6           | Collect metrics from performance_schema.file_summary_by_event_name.
-collect.perf_schema.file_instances                     | 5.5           | Collect metrics from performance_schema.file_summary_by_instance.
-collect.perf_schema.indexiowaits                       | 5.6           | Collect metrics from performance_schema.table_io_waits_summary_by_index_usage.
-collect.perf_schema.tableiowaits                       | 5.6           | Collect metrics from performance_schema.table_io_waits_summary_by_table.
-collect.perf_schema.tablelocks                         | 5.6           | Collect metrics from performance_schema.table_lock_waits_summary_by_table.
-collect.slave_status                                   | 5.1           | Collect from SHOW SLAVE STATUS (Enabled by default)
-collect.heartbeat                                      | 5.1           | Collect from [heartbeat](#heartbeat).
-collect.heartbeat.database                             | 5.1           | Database from where to collect heartbeat data. (default: heartbeat)
-collect.heartbeat.table                                | 5.1           | Table from where to collect heartbeat data. (default: heartbeat)
-collect.all                                            | -             | Collect all metrics.
+| Name                                                   | MySQL Version | Description                                                                          |
+| ------------------------------------------------------ | ------------- | ------------------------------------------------------------------------------------ |
+| collect.auto_increment.columns                         | 5.1           | Collect auto_increment columns and max values from information_schema.               |
+| collect.binlog_size                                    | 5.1           | Collect the current size of all registered binlog files.                             |
+| collect.engine_innodb_status                           | 5.1           | Collect from SHOW ENGINE INNODB STATUS.                                              |
+| collect.engine_tokudb_status                           | 5.6           | Collect from SHOW ENGINE TOKUDB STATUS.                                              |
+| collect.global_status                                  | 5.1           | Collect from SHOW GLOBAL STATUS (Enabled by default)                                 |
+| collect.global_variables                               | 5.1           | Collect from SHOW GLOBAL VARIABLES (Enabled by default)                              |
+| collect.info_schema.clientstats                        | 5.5           | If running with userstat=1, set to true to collect client statistics.                |
+| collect.info_schema.innodb_metrics                     | 5.6           | Collect metrics from information_schema.innodb_metrics.                              |
+| collect.info_schema.innodb_tablespaces                 | 5.7           | Collect metrics from information_schema.innodb_sys_tablespaces.                      |
+| collect.info_schema.processlist                        | 5.1           | Collect thread state counts from information_schema.processlist.                     |
+| collect.info_schema.processlist.min_time               | 5.1           | Minimum time a thread must be in each state to be counted. (default: 0)              |
+| collect.info_schema.query_response_time                | 5.5           | Collect query response time distribution if query_response_time_stats is ON.         |
+| collect.info_schema.tables                             | 5.1           | Collect metrics from information_schema.tables (Enabled by default)                  |
+| collect.info_schema.tables.databases                   | 5.1           | The list of databases to collect table stats for, or '`*`' for all.                  |
+| collect.info_schema.tablestats                         | 5.1           | If running with userstat=1, set to true to collect table statistics.                 |
+| collect.info_schema.userstats                          | 5.1           | If running with userstat=1, set to true to collect user statistics.                  |
+| collect.perf_schema.eventsstatements                   | 5.6           | Collect metrics from performance_schema.events_statements_summary_by_digest.         |
+| collect.perf_schema.eventsstatements.digest_text_limit | 5.6           | Maximum length of the normalized statement text. (default: 120)                      |
+| collect.perf_schema.eventsstatements.limit             | 5.6           | Limit the number of events statements digests by response time. (default: 250)       |
+| collect.perf_schema.eventsstatements.timelimit         | 5.6           | Limit how old the 'last_seen' events statements can be, in seconds. (default: 86400) |
+| collect.perf_schema.eventswaits                        | 5.5           | Collect metrics from performance_schema.events_waits_summary_global_by_event_name.   |
+| collect.perf_schema.file_events                        | 5.6           | Collect metrics from performance_schema.file_summary_by_event_name.                  |
+| collect.perf_schema.file_instances                     | 5.5           | Collect metrics from performance_schema.file_summary_by_instance.                    |
+| collect.perf_schema.indexiowaits                       | 5.6           | Collect metrics from performance_schema.table_io_waits_summary_by_index_usage.       |
+| collect.perf_schema.tableiowaits                       | 5.6           | Collect metrics from performance_schema.table_io_waits_summary_by_table.             |
+| collect.perf_schema.tablelocks                         | 5.6           | Collect metrics from performance_schema.table_lock_waits_summary_by_table.           |
+| collect.slave_status                                   | 5.1           | Collect from SHOW SLAVE STATUS (Enabled by default)                                  |
+| collect.heartbeat                                      | 5.1           | Collect from [heartbeat](#heartbeat).                                                |
+| collect.heartbeat.database                             | 5.1           | Database from where to collect heartbeat data. (default: heartbeat)                  |
+| collect.heartbeat.table                                | 5.1           | Table from where to collect heartbeat data. (default: heartbeat)                     |
+| collect.all                                            | -             | Collect all metrics.                                                                 |
 
 ### General Flags
-Name                                       | Description
--------------------------------------------|--------------------------------------------------------------------------------------------------
-config.my-cnf                              | Path to .my.cnf file to read MySQL credentials from. (default: `~/.my.cnf`)
-log.level                                  | Logging verbosity (default: info)
-exporter.lock_wait_timeout                 | Set a lock_wait_timeout on the connection to avoid long metadata locking. (default: 2 seconds)
-exporter.log_slow_filter                   | Add a log_slow_filter to avoid slow query logging of scrapes.  NOTE: Not supported by Oracle MySQL.
-exporter.global-conn-pool                  | Use global connection pool instead of creating new pool for each http request.
-exporter.max-open-conns                    | Maximum number of open connections to the database. https://golang.org/pkg/database/sql/#DB.SetMaxOpenConns
-exporter.max-idle-conns                    | Maximum number of connections in the idle connection pool. https://golang.org/pkg/database/sql/#DB.SetMaxIdleConns
-exporter.conn-max-lifetime                 | Maximum amount of time a connection may be reused. https://golang.org/pkg/database/sql/#DB.SetConnMaxLifetime
-mysql.ssl-ca-file                          | Path to the SSL CA file.
-mysql.ssl-cert-file                        | Path to the SSL certificate file.
-mysql.ssl-key-file                         | Path to the SSL certificate key file.
-mysql.ssl-skip-verify                      | Skip SSL certifcates validation.
-web.listen-address                         | Address to listen on for web interface and telemetry.
-web.telemetry-path                         | Path under which to expose metrics.
-version                                    | Print the version information.
+| Name                       | Description                                                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| config.my-cnf              | Path to .my.cnf file to read MySQL credentials from. (default: `~/.my.cnf`)                                        |
+| log.level                  | Logging verbosity (default: info)                                                                                  |
+| exporter.lock_wait_timeout | Set a lock_wait_timeout on the connection to avoid long metadata locking. (default: 2 seconds)                     |
+| exporter.log_slow_filter   | Add a log_slow_filter to avoid slow query logging of scrapes.  NOTE: Not supported by Oracle MySQL.                |
+| exporter.global-conn-pool  | Use global connection pool instead of creating new pool for each http request.                                     |
+| exporter.max-open-conns    | Maximum number of open connections to the database. https://golang.org/pkg/database/sql/#DB.SetMaxOpenConns        |
+| exporter.max-idle-conns    | Maximum number of connections in the idle connection pool. https://golang.org/pkg/database/sql/#DB.SetMaxIdleConns |
+| exporter.conn-max-lifetime | Maximum amount of time a connection may be reused. https://golang.org/pkg/database/sql/#DB.SetConnMaxLifetime      |
+| mysql.ssl-ca-file          | Path to the SSL CA file.                                                                                           |
+| mysql.ssl-cert-file        | Path to the SSL certificate file.                                                                                  |
+| mysql.ssl-key-file         | Path to the SSL certificate key file.                                                                              |
+| mysql.ssl-skip-verify      | Skip SSL certifcates validation.                                                                                   |
+| web.listen-address         | Address to listen on for web interface and telemetry.                                                              |
+| web.telemetry-path         | Path under which to expose metrics.                                                                                |
+| version                    | Print the version information.                                                                                     |
 
 ### Setting the MySQL server's data source name
 
